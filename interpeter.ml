@@ -24,11 +24,11 @@ type exp = Eint of int |
  Fun of ide * exp |
  FunCall of exp * exp |
  Letrec of ide * exp * exp
- (* types for Set *)
+ (* ops per creare Set *)
  	|EmptySet of exp
  	|Singleton of exp
- 	|Of of exp * exp
-	(* basic ops specific to sets *)
+	(* ops sui Set *)
+	| Of of exp * exp
 	| Union of exp * exp 
 	| Intersection of exp * exp 
 	| Difference of exp * exp 
@@ -39,7 +39,7 @@ type exp = Eint of int |
 	| Length of exp
 	| GetMax of exp 
 	| GetMin of exp 
-	(* funct ops  *)
+	(* ops funzionali per i Set*)
 	| IsEmpty of exp 
 	| ForAll of exp * exp
 	| Exists of exp * exp 
@@ -69,7 +69,7 @@ and evFun = ide * exp * evT env;;
 let typecheck (s : string) (v : evT) : bool = match s with
 	"int" -> (match v with Int(_) -> true |	_ -> false) |
 	"bool" -> (match v with Bool(_) -> true | _ -> false) |
-	(*extended to string & set*)
+	(*esteso a Stringhe e Set*)
 	"string" -> (match v with String(_) -> true | _ -> false)|
 	"set" -> (match v with SetVal(_) -> true | _ -> false)|
 	_ -> failwith("not a valid type");;
@@ -84,12 +84,14 @@ let get_type (v : evT) : typeSet =
       | SetVal(Empty(t)|Set(_,t)) -> t
       | _ -> failwith("incompatible type");;
 
-(* This function turns a typeSet into a string*)
+(* converte typeSet in una stringa *)
 let to_str (t : typeSet) =
    match t with
       | TInt -> "int"
       | TBool -> "bool"
       | TString -> "string";;
+
+(* converte evT in exp *)
 
 let evTToExp (e : evT) : exp =
 	match e with
@@ -97,6 +99,14 @@ let evTToExp (e : evT) : exp =
 	|Bool(b) -> Ebool(b)
 	|String(s) -> Estring(s)
 	|_ -> failwith("unexpected error");;
+
+(* converte exp in typeSet *)
+let exp_to_type (e : exp) : typeSet = 
+	match e with
+		EtypeSet(TInt) -> (TInt:typeSet)|
+		EtypeSet(TBool) -> (TBool:typeSet)|
+		EtypeSet(TString) -> (TString:typeSet)|
+		_ -> failwith("incompatible type for sets");;
 
 (*funzioni primitive*)
 let prod (x: evT) (y: evT) = if (typecheck "int" x) && (typecheck "int" y)
@@ -179,16 +189,7 @@ let concat (s: evT) (t: evT) = if (typecheck "string" s) && (typecheck "string" 
 
 (*Sets operations*)
 
-(* converts exp to typeSet *)
-let exp_to_type (e : exp) : typeSet = 
-	match e with
-		EtypeSet(TInt) -> (TInt:typeSet)|
-		EtypeSet(TBool) -> (TBool:typeSet)|
-		EtypeSet(TString) -> (TString:typeSet)|
-		_ -> failwith("incompatible type for sets");;
-
-
-(* creates un set vuoto *)
+(* crea un set vuoto *)
 let set_empty (t : typeSet) : evT = SetVal(Empty(t));;
 
 let isEmptySet (t: evT) = match t with 
@@ -242,6 +243,7 @@ let removeSet (v : evT) (s : evT ) : evT =
 		|_ -> failwith("Set not valid");;
 
 (* set comparators *)
+
 (* unione insiemistica set1 U set2 *)
 let setUnion (s1 : evT) (s2: evT) : evT = 
 	match (s1,s2) with 
@@ -259,11 +261,12 @@ let setDiff (s1 : evT) (s2 : evT ) : evT  =
 match (s1,s2) with 
 		| SetVal(Empty(t1)|Set(_,t1)), SetVal(Empty(t2)) -> if t1 = t2 then s1 else failwith("incompatible types") 
 		| SetVal(Empty(t1)), SetVal(Set(_, t2)) -> if t1 = t2 then s2 else failwith("incompatible types")
-		| SetVal(Set(lst1, t1)), SetVal(Set(lst2, t2)) -> if t1 <> t2 then failwith("incompatible types") else ( let rec sdiff list acc =
-			match list with
-			|[] -> acc
-			|h::t -> if (belongsToSet h s2) = (Bool true) then sdiff t acc else sdiff t (addSet h acc)
-		in sdiff lst1 (SetVal(Empty(t1))))
+		| SetVal(Set(lst1, t1)), SetVal(Set(lst2, t2)) -> if t1 <> t2 then failwith("incompatible types") else ( 
+			let rec sdiff list acc =
+				match list with
+				|[] -> acc
+				|h::t -> if (belongsToSet h s2) = (Bool true) then sdiff t acc else sdiff t (addSet h acc)
+			in sdiff lst1 (SetVal(Empty(t1))))
 		|_ -> failwith("Set not valid");;
 
 
@@ -272,11 +275,13 @@ let setInts (s1 : evT) (s2 : evT ) : evT  =
 match (s1,s2) with 
 		| SetVal(Empty(t1)|Set(_,t1)), SetVal(Empty(t2)) -> if t1 = t2 then s1 else failwith("incompatible types") 
 		| SetVal(Empty(t1)), SetVal(Set(_, t2)) -> if t1 = t2 then s2 else failwith("incompatible types")
-		| SetVal(Set(lst1, t1)), SetVal(Set(lst2, t2)) -> if t1 <> t2 then failwith("incompatible types") else ( let rec inters list acc =
-			match list with
-			|[] -> acc
-			|h::t -> if (belongsToSet h s2) = (Bool true) then inters t (addSet h acc) else inters t acc 
-		in inters lst1 (SetVal(Empty(t1))))
+		| SetVal(Set(lst1, t1)), SetVal(Set(lst2, t2)) -> if t1 <> t2 then failwith("incompatible types") else (
+			let rec inters list acc =
+				match list with
+				|[] -> acc
+				|h::t -> if (belongsToSet h s2) = (Bool true) then inters t (addSet h acc) else inters t acc 
+			in inters lst1 (SetVal(Empty(t1)))
+		)
 		|_ -> failwith("Set not valid");;
 
 (* inclusione insiemistica set1 C set2 *)
@@ -285,12 +290,12 @@ let includeSet (s1 : evT) (s2 :evT) : evT = match (s1,s2) with
 		| SetVal(Set(_,t1)), SetVal(Empty(t2)) -> if t1 = t2 then (Bool false) else failwith("incompatible types")
 		| SetVal(Set(lst1,t1)), SetVal(Set(lst2,t2)) -> if t1 <> t2 then failwith ("incompatible types") else (
 			let rec inclusion sub main = 
-			match (sub, main) with
-			|SetVal(Empty(_)|Set([], _)), SetVal(_) -> (Bool true) 
-			|_, (SetVal(Empty(_)|Set([],_ ))) -> (Bool false) 
-			|SetVal(Set(h1::t1,typeS)),SetVal(Set(h2::t2,_)) -> et (belongsToSet h1 main) (inclusion (SetVal(Set(t1, typeS))) (SetVal(Set(t2, typeS))))
-			|(_,_) -> failwith("unexpected error")
-		in inclusion s1 s2
+				match (sub, main) with
+				|SetVal(Empty(_)|Set([], _)), SetVal(_) -> (Bool true) 
+				|_, (SetVal(Empty(_)|Set([],_ ))) -> (Bool false) 
+				|SetVal(Set(h1::t1,typeS)),SetVal(Set(_,_)) -> et (belongsToSet h1 main) (inclusion (SetVal(Set(t1, typeS))) main)
+				|(_,_) -> failwith("unexpected error")
+			in inclusion s1 s2
 		)
 		|_ -> failwith("Set not valid");;
 
@@ -468,7 +473,7 @@ and existSet (p : exp) (s : evT): evT = match s with
 				match l with
 					| [] -> acc
 					| h::t -> search t ( (eval (FunCall(p, evTToExp(h))) env0) :: acc )  
-			in List.fold_left vel ( Bool true) (search lst [])
+			in List.fold_left vel ( Bool false) (search lst [])
 			)
 		| _ -> failwith(" Predicate not valid"))
 	|_ -> failwith("Set not valid")
