@@ -131,9 +131,19 @@ let diff (x: evT) (y: evT) = if (typecheck "int" x) && (typecheck "int" y)
 
 let eq (x: evT) (y: evT) = if (typecheck "int" x) && (typecheck "int" y)
 	then (match (x,y) with
-		|(Int(n),Int(u)) -> Bool(n=u)
+		|(Int(n),Int(u)) -> Bool(n = u)
 		| _ -> failwith ("typechecker error") 
 	)
+	else if (typecheck "bool" x) && (typecheck "bool" y)
+	then (match (x,y) with
+		|(Bool(b),Bool(e)) -> Bool(b = e)
+		| _ -> failwith ("typechecker error") 
+	)
+	else if (typecheck "string" x) && (typecheck "string" y)
+	then (match (x, y) with
+		|(String(s), String(t)) -> Bool(s = t)
+		| _ -> failwith ("typechecker error")
+	) 
 	else failwith("Type error");;
 
 let minus (x: evT) = if (typecheck "int" x) 
@@ -500,8 +510,7 @@ and mapSet (f : exp) (s : evT): evT = match s with
 	|SetVal(Empty(_))|SetVal(Set([], _)) -> s
 	|SetVal(Set(lst, typeS)) ->
 		(match f with
-			Fun(_, _) -> (* Fun(arg, fBody) *)
-				let env0 = emptyenv Unbound in
+			Fun(_, _) -> let env0 = emptyenv Unbound in
 				(let rec map (l : evT list) acc =
 					match l with
 						|[] -> acc
