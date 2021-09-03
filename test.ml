@@ -1,10 +1,11 @@
-#use "interpeter.ml";;
+(* se si vuole evitare di copia-incollare l'interprete #use "interpeter.ml";; *)
 
 (* ================= BASIC TESTS  ================= *)
 
-(* creazione di env e set vuoto*)
+(* creazione di env*)
 let env0 = emptyenv Unbound;;
 
+(* set vuoto di esempio, saranno usati principalmente interi in questa parte*)
 let es = EmptySet(EtypeSet(TInt));;
 
 (* creazione e valutazione espressione per il singleton (interi) *)
@@ -18,11 +19,11 @@ let singletonValue = eval singleInt env0;;
 
 let isThisEmpty = IsEmpty(es);;
 
-let emptyCheck = eval isThisEmpty env0;;
+let emptyCheck = eval isThisEmpty env0;; (* Bool true *)
 
 let isThisEmpty = IsEmpty(singleInt);;
 
-let emptyCheck = eval isThisEmpty env0;;
+let emptyCheck = eval isThisEmpty env0;; (* Bool false *)
 
 (* tentativo di inserimento di un duplicato nel set *)
 let ss_double = eval (Add(Eint 20, singleInt)) env0;;
